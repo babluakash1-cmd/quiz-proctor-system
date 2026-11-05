@@ -1,0 +1,6 @@
+room_id,question_text,option_a,option_b,option_c,option_d,correct_option,marks
+room_1,What is the typical barrier potential of a Germanium diode at room temperature?,0.3 V,0.7 V,1.1 V,0.1 V,A,1
+room_1,Which circuit element opposes a sudden change in electric current?,Resistor,Inductor,Capacitor,Diode,B,1
+room_1,What is the ideal slew rate of an operational amplifier?,Zero,1 V/us,100 V/us,Infinite,D,1
+room_2,What does CDMA stand for in wireless communications?,Code Division Multiple Access,Carrier Division Multiple Access,Common Data Multiplex Access,Channel Distribution Multiple Access,A,1
+room_2,In FM modulation the carrier frequency deviation is directly proportional to:,Modulating signal frequency,Modulating signal amplitude,Phase difference,Carrier amplitude,B,1

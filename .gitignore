@@ -1,0 +1,39 @@
+# Dependencies
+node_modules/
+*/node_modules/
+
+# Production build outputs
+dist/
+frontend/dist/
+dist-ssr/
+
+# Environment Variables & Secrets (CRITICAL: Never commit credentials to Git)
+.env
+.env.local
+.env.*.local
+*.env
+backend/.env
+frontend/.env
+serviceAccountKey.json
+service-account*.json
+backend/serviceAccountKey.json
+*.pem
+
+# File uploads & logs
+uploads/*
+!uploads/.gitkeep
+backend/uploads/*
+!backend/uploads/.gitkeep
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# System & Editor files
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.suo
+*.ntvs*
+*.njsproj
