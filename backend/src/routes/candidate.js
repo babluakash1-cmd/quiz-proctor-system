@@ -1,4 +1,4 @@
-const express = require('express');
+﻿const express = require('express');
 const crypto = require('crypto');
 const dbService = require('../services/dbService');
 const { recomputeRanks } = require('../services/rankingService');
@@ -30,6 +30,7 @@ router.post('/join', async (req, res) => {
       session_token: sessionToken,
       status: 'in_progress',
       score: 0,
+      marks: 0,
       rank: null,
       terminated_reason: null,
       last_ping: Date.now(),
@@ -59,6 +60,15 @@ router.post('/join', async (req, res) => {
   }
 });
 
+function fisherYatesShuffle(array) {
+  const arr = [...array];
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
 // Shuffled Question Initialization (Strips correct options so they cannot be inspected in browser)
 router.get('/questions-init/:sessionToken', async (req, res) => {
   const { sessionToken } = req.params;
@@ -73,17 +83,17 @@ router.get('/questions-init/:sessionToken', async (req, res) => {
     const rawQuestions = await dbService.getQuestionsByRoom(candidate.room_id);
     const activeQuestions = rawQuestions.filter((q) => q.is_active !== false);
 
-    // Randomize question sequence per candidate
-    const shuffledQuestions = [...activeQuestions].sort(() => 0.5 - Math.random());
+    // Randomize question sequence per candidate using Fisher-Yates
+    const shuffledQuestions = fisherYatesShuffle(activeQuestions);
 
     // Sanitize and shuffle answer choices per question (stripping correct_option)
     const prepared = shuffledQuestions.map((q) => {
-      const options = [
+      const options = fisherYatesShuffle([
         { key: 'A', text: q.option_a },
         { key: 'B', text: q.option_b },
         { key: 'C', text: q.option_c },
         { key: 'D', text: q.option_d }
-      ].sort(() => 0.5 - Math.random());
+      ]);
 
       return {
         id: q.id,
@@ -113,7 +123,7 @@ router.post('/answer', async (req, res) => {
     const targetQ = questions.find((q) => q.id === questionId);
     if (!targetQ) return res.status(404).json({ error: 'Question not found' });
 
-    const isCorrect = targetQ.correct_option === selectedOption;
+    const isCorrect = String(targetQ.correct_option || '').trim().toUpperCase() === String(selectedOption || '').trim().toUpperCase();
     await dbService.saveAnswer(candidate.id, questionId, {
       selected_option: selectedOption || null,
       is_correct: isCorrect,
@@ -178,6 +188,7 @@ router.post('/violation', async (req, res) => {
     await dbService.updateCandidate(candidate.id, {
       status: 'disqualified',
       score: totalScore,
+      marks: totalScore,
       submitted_at: Date.now(),
       terminated_reason: type
     });
@@ -232,6 +243,7 @@ router.post('/submit', async (req, res) => {
     await dbService.updateCandidate(candidate.id, {
       status: 'submitted',
       score: totalScore,
+      marks: totalScore,
       submitted_at: Date.now()
     });
 
@@ -264,3 +276,4 @@ router.get('/result/:candidateId', async (req, res) => {
 });
 
 module.exports = router;
+

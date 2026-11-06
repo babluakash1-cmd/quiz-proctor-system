@@ -1,4 +1,5 @@
 const jwt = require('jsonwebtoken');
+const { getJwtSecret } = require('../config/jwt');
 
 module.exports = (req, res, next) => {
   const authHeader = req.headers['authorization'];
@@ -8,7 +9,7 @@ module.exports = (req, res, next) => {
     return res.status(401).json({ error: 'Access denied: No token provided' });
   }
 
-  const secret = process.env.JWT_SECRET || 'fallback_secret_key_change_me';
+  const secret = getJwtSecret();
 
   try {
     const verified = jwt.verify(token, secret);

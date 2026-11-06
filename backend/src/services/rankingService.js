@@ -1,4 +1,4 @@
-const dbService = require('./dbService');
+﻿const dbService = require('./dbService');
 
 async function recomputeRanks(roomId, io = null) {
   try {
@@ -11,24 +11,43 @@ async function recomputeRanks(roomId, io = null) {
 
     // Sort descending by score, ascending by submission time (fastest submission gets higher rank on tie)
     roomCandidates.sort((a, b) => {
-      if ((b.score || 0) !== (a.score || 0)) {
-        return (b.score || 0) - (a.score || 0);
+      const scoreA = a.marks !== undefined ? a.marks : (a.score || 0);
+      const scoreB = b.marks !== undefined ? b.marks : (b.score || 0);
+      if (scoreB !== scoreA) {
+        return scoreB - scoreA;
       }
       return (a.submitted_at || 0) - (b.submitted_at || 0);
     });
 
     const rankedLeaderboard = [];
+    const batchUpdates = {};
     let currentRank = 1;
 
     for (const c of roomCandidates) {
-      const updated = { ...c, rank: currentRank };
-      await dbService.updateCandidate(c.id, { rank: currentRank });
+      const candidateMarks = c.marks !== undefined ? c.marks : (c.score || 0);
+      const updated = {
+        ...c,
+        name: c.name,
+        marks: candidateMarks,
+        score: candidateMarks,
+        rank: currentRank
+      };
+
+      batchUpdates[`candidates/${c.id}/rank`] = currentRank;
+      batchUpdates[`candidates/${c.id}/marks`] = candidateMarks;
+      batchUpdates[`candidates/${c.id}/score`] = candidateMarks;
+      batchUpdates[`candidates/${c.id}/name`] = c.name;
+
       rankedLeaderboard.push(updated);
       currentRank++;
     }
 
-    // Persist snapshot directly into Firebase Realtime Database
-    await dbService.setLeaderboard(roomId, rankedLeaderboard);
+    batchUpdates[`leaderboards/${roomId}`] = rankedLeaderboard;
+
+    // Atomically persist all candidate rank changes and room leaderboard in one single batch operation
+    if (Object.keys(batchUpdates).length > 0) {
+      await dbService.updateBatch(batchUpdates);
+    }
 
     // Broadcast to Socket.IO room channel and admin monitor
     if (io) {

@@ -1,0 +1,11 @@
+{
+  "name": "quiz-proctor",
+  "version": "1.0.0",
+  "description": "Strict Proctoring System - Full-Stack Application for Render Deployment",
+  "private": true,
+  "scripts": {
+    "build": "npm install --prefix frontend && npm run build --prefix frontend && npm install --prefix backend",
+    "start": "node backend/server.js",
+    "seed": "node backend/seedFirebase.js"
+  }
+}

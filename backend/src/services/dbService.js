@@ -165,6 +165,12 @@ const dbService = {
     return Object.keys(val).map((k) => ({ id: k, ...val[k] })).reverse();
   },
 
+  // Multi-path Batch Update
+  async updateBatch(updates) {
+    checkDb();
+    await rtdb.ref().update(updates);
+  },
+
   // Leaderboard
   async setLeaderboard(roomId, leaderboardArray) {
     checkDb();

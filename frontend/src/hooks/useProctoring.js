@@ -8,15 +8,23 @@ export default function useProctoring({ sessionToken, currentQuestionIndex, onVi
     if (isTriggered.current) return;
     isTriggered.current = true;
 
+    const payload = JSON.stringify({
+      sessionToken,
+      type: reason,
+      questionIndex: currentQuestionIndex
+    });
+
     try {
+      if (navigator.sendBeacon) {
+        const blob = new Blob([payload], { type: 'application/json' });
+        navigator.sendBeacon(getApiUrl('/api/violation'), blob);
+      }
+
       const res = await fetch(getApiUrl('/api/violation'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          sessionToken,
-          type: reason,
-          questionIndex: currentQuestionIndex
-        })
+        body: payload,
+        keepalive: true
       });
       const data = await res.json();
       if (onViolationTriggered) {
@@ -24,6 +32,9 @@ export default function useProctoring({ sessionToken, currentQuestionIndex, onVi
       }
     } catch (err) {
       console.error('Violation reporting failed:', err);
+      if (onViolationTriggered) {
+        onViolationTriggered(reason, null);
+      }
     }
   };
 
@@ -35,9 +46,20 @@ export default function useProctoring({ sessionToken, currentQuestionIndex, onVi
       }
     };
 
-    // 2. Window Blur (Opening another application / loss of window focus)
+    // 2. Window Blur with Grace Period (Prevents false positives from OS notifications or browser prompts)
+    let blurTimer = null;
     const handleBlur = () => {
-      triggerViolation('Window lost focus / application changed');
+      if (blurTimer) clearTimeout(blurTimer);
+      blurTimer = setTimeout(() => {
+        triggerViolation('Window lost focus / application changed');
+      }, 2500);
+    };
+
+    const handleFocus = () => {
+      if (blurTimer) {
+        clearTimeout(blurTimer);
+        blurTimer = null;
+      }
     };
 
     // 3. Fullscreen Exit
@@ -51,7 +73,6 @@ export default function useProctoring({ sessionToken, currentQuestionIndex, onVi
     const handleKeyDown = (e) => {
       if (
         e.key === 'PrintScreen' ||
-        e.keyCode === 44 ||
         e.key === 'F12' ||
         (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'J' || e.key === 'C')) ||
         (e.ctrlKey && (e.key === 'u' || e.key === 'U'))
@@ -110,6 +131,7 @@ export default function useProctoring({ sessionToken, currentQuestionIndex, onVi
     // Attach Listeners
     document.addEventListener('visibilitychange', handleVisibilityChange);
     window.addEventListener('blur', handleBlur);
+    window.addEventListener('focus', handleFocus);
     document.addEventListener('fullscreenchange', handleFullscreenChange);
     window.addEventListener('keydown', handleKeyDown);
     document.addEventListener('contextmenu', handleContextMenu);
@@ -131,8 +153,10 @@ export default function useProctoring({ sessionToken, currentQuestionIndex, onVi
     }, 5000);
 
     return () => {
+      if (blurTimer) clearTimeout(blurTimer);
       document.removeEventListener('visibilitychange', handleVisibilityChange);
       window.removeEventListener('blur', handleBlur);
+      window.removeEventListener('focus', handleFocus);
       document.removeEventListener('fullscreenchange', handleFullscreenChange);
       window.removeEventListener('keydown', handleKeyDown);
       document.removeEventListener('contextmenu', handleContextMenu);

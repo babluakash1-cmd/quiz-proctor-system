@@ -1,0 +1,23 @@
+# ==============================================================================
+# Render Blueprint Configuration (render.yaml)
+# ==============================================================================
+
+services:
+  - type: web
+    name: quiz-proctor
+    env: node
+    plan: free
+    region: oregon
+    buildCommand: npm run build
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 5000
+      - key: FIREBASE_DATABASE_URL
+        value: https://quiz-ee5ad-default-rtdb.firebaseio.com/
+      - key: JWT_SECRET
+        generateValue: true
+      - key: CLIENT_URL
+        value: '*'

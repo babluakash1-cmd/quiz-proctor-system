@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import io from 'socket.io-client';
 import { AuthContext } from '../../context/AuthContext';
 import { getApiUrl, getSocketUrl } from '../../config/api';
+import { GENERAL_THEME } from '../../config/theme';
 
 export default function Monitor() {
   const [candidates, setCandidates] = useState([]);
@@ -48,23 +49,23 @@ export default function Monitor() {
   }, [token]);
 
   return (
-    <div className="min-h-screen bg-white p-6 space-y-6">
-      <div className="flex justify-between items-center border-b border-black pb-4">
+    <div className={`min-h-screen ${GENERAL_THEME.bg} text-slate-100 p-6 space-y-6`}>
+      <div className={`flex justify-between items-center ${GENERAL_THEME.headerBg} p-4 rounded-xl shadow-lg border-b-2 ${GENERAL_THEME.border}`}>
         <div>
-          <h1 className="text-xl font-bold uppercase tracking-tight">Real-Time Proctor Monitor & Violation Feed</h1>
-          <p className="text-xs text-gray-500 uppercase mt-0.5">Live WebSocket and Heartbeat Telemetry</p>
+          <h1 className={`text-xl font-extrabold uppercase tracking-tight ${GENERAL_THEME.text}`}>Real-Time Proctor Monitor & Feed</h1>
+          <p className="text-xs text-slate-400 uppercase mt-0.5">Live WebSocket and Heartbeat Telemetry</p>
         </div>
         <div className="space-x-4">
-          <Link to="/admin/dashboard" className="text-sm font-semibold hover:underline">
+          <Link to="/admin/dashboard" className="text-sm font-bold text-amber-300 hover:text-amber-400 hover:underline">
             Dashboard
           </Link>
-          <Link to="/admin/questions" className="text-sm font-semibold hover:underline">
+          <Link to="/admin/questions" className="text-sm font-bold text-amber-300 hover:text-amber-400 hover:underline">
             Questions
           </Link>
-          <Link to="/admin/rooms" className="text-sm font-semibold hover:underline">
+          <Link to="/admin/rooms" className="text-sm font-bold text-amber-300 hover:text-amber-400 hover:underline">
             Rooms
           </Link>
-          <Link to="/admin/ranks" className="text-sm font-semibold hover:underline">
+          <Link to="/admin/ranks" className="text-sm font-bold text-amber-300 hover:text-amber-400 hover:underline">
             Rankings
           </Link>
         </div>
@@ -72,49 +73,49 @@ export default function Monitor() {
 
       <div className="grid grid-cols-2 gap-6">
         {/* Candidates Status Table */}
-        <div>
-          <div className="flex justify-between items-center mb-2">
-            <h2 className="text-sm font-bold uppercase">Candidate Status ({candidates.length})</h2>
+        <div className={`${GENERAL_THEME.cardBg} border-2 ${GENERAL_THEME.border} p-5 rounded-2xl shadow-xl space-y-3`}>
+          <div className="flex justify-between items-center pb-2 border-b border-slate-700/60">
+            <h2 className={`text-sm font-extrabold uppercase ${GENERAL_THEME.text}`}>Registered Candidates ({candidates.length})</h2>
             <button
               onClick={fetchMonitorData}
-              className="text-xs font-semibold text-gray-600 hover:text-black underline"
+              className="text-xs font-bold text-amber-400 hover:underline"
             >
               Refresh Table
             </button>
           </div>
-          <table className="w-full border border-black text-left text-xs">
-            <thead className="bg-gray-100 border-b border-black">
-              <tr>
-                <th className="p-2 border-r border-black">Candidate</th>
-                <th className="p-2 border-r border-black">Room</th>
-                <th className="p-2 border-r border-black">Status</th>
-                <th className="p-2">Score</th>
+          <table className="w-full text-left text-xs border-collapse">
+            <thead>
+              <tr className="border-b border-slate-700 text-slate-400 font-bold uppercase">
+                <th className="p-2">Candidate</th>
+                <th className="p-2">Room Name</th>
+                <th className="p-2">Status</th>
+                <th className="p-2 text-right">Score</th>
               </tr>
             </thead>
             <tbody>
               {candidates.length === 0 ? (
                 <tr>
-                  <td colSpan="4" className="p-4 text-center text-gray-500">
+                  <td colSpan="4" className="p-4 text-center text-slate-400">
                     No active candidates currently.
                   </td>
                 </tr>
               ) : (
                 candidates.map((c) => (
-                  <tr key={c.id} className="border-b border-black">
-                    <td className="p-2 border-r border-black font-semibold">{c.name}</td>
-                    <td className="p-2 border-r border-black">{c.room_name}</td>
+                  <tr key={c.id} className="border-b border-slate-800 hover:bg-slate-900/40">
+                    <td className="p-2 font-semibold text-slate-200">{c.name}</td>
+                    <td className="p-2 text-slate-300">{c.room_name}</td>
                     <td
-                      className={`p-2 border-r border-black uppercase font-bold ${
+                      className={`p-2 uppercase font-bold ${
                         c.status === 'disqualified'
-                          ? 'text-red-600'
+                          ? 'text-red-400'
                           : c.status === 'submitted'
-                          ? 'text-green-700'
-                          : 'text-blue-600'
+                          ? 'text-emerald-400'
+                          : 'text-amber-300'
                       }`}
                     >
                       {c.status}
                     </td>
-                    <td className="p-2 font-mono font-bold">{c.score}</td>
+                    <td className="p-2 font-mono font-extrabold text-right text-amber-400">{c.score}</td>
                   </tr>
                 ))
               )}
@@ -123,29 +124,29 @@ export default function Monitor() {
         </div>
 
         {/* Real-Time Violation Feed */}
-        <div>
-          <h2 className="text-sm font-bold uppercase text-red-600 mb-2 flex items-center space-x-2">
-            <span className="w-2 h-2 rounded-full bg-red-600 animate-ping"></span>
-            <span>Real-Time Violation Feed</span>
+        <div className={`${GENERAL_THEME.cardBg} border-2 ${GENERAL_THEME.border} p-5 rounded-2xl shadow-xl space-y-3`}>
+          <h2 className="text-sm font-extrabold uppercase text-red-400 flex items-center space-x-2 border-b border-slate-700/60 pb-2">
+            <span className="w-2.5 h-2.5 rounded-full bg-red-500 animate-ping"></span>
+            <span>Real-Time Security Violation Feed</span>
           </h2>
-          <div className="border-2 border-black h-[500px] overflow-y-auto p-3 space-y-2 bg-gray-50">
+          <div className="h-[480px] overflow-y-auto p-3 space-y-2.5 bg-slate-950/80 rounded-xl border border-slate-800">
             {violations.length === 0 ? (
-              <div className="text-gray-400 text-xs italic text-center p-8">
+              <div className="text-slate-500 text-xs italic text-center p-8">
                 No security violations recorded.
               </div>
             ) : (
               violations.map((v, idx) => (
-                <div key={idx} className="border border-red-500 bg-red-50 p-3 text-xs space-y-1 shadow-sm">
-                  <div className="flex justify-between font-bold text-red-700">
+                <div key={idx} className="border border-red-900/80 bg-red-950/40 p-3 rounded-lg text-xs space-y-1 shadow-sm">
+                  <div className="flex justify-between font-bold text-red-400">
                     <span>[{v.type}]</span>
-                    <span className="text-gray-500 font-mono text-[11px]">
+                    <span className="text-slate-400 font-mono text-[11px]">
                       {new Date(v.time || v.occurred_at).toLocaleTimeString()}
                     </span>
                   </div>
-                  <div className="text-gray-800">
-                    Candidate: <span className="font-bold">{v.candidateName || v.candidate_name || `ID #${v.candidateId || v.candidate_id}`}</span>
+                  <div className="text-slate-200">
+                    Candidate: <span className="font-bold text-amber-300">{v.candidateName || v.candidate_name || `Candidate #${v.candidateId || v.candidate_id}`}</span>
                   </div>
-                  <div className="text-gray-500 text-[11px]">
+                  <div className="text-slate-400 text-[11px]">
                     Occurred at Question #{v.questionIndex || v.question_index || 1} • Auto-disqualified
                   </div>
                 </div>

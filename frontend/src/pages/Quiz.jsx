@@ -1,7 +1,8 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+﻿import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import useProctoring from '../hooks/useProctoring';
 import { getApiUrl } from '../config/api';
+import { getRoomTheme } from '../config/theme';
 
 export default function Quiz() {
   const { sessionToken } = useParams();
@@ -13,6 +14,9 @@ export default function Quiz() {
   const [timeLeft, setTimeLeft] = useState(30);
   const [loading, setLoading] = useState(true);
   const [timePerQuestion, setTimePerQuestion] = useState(30);
+
+  const roomIdentifier = localStorage.getItem('roomCode') || localStorage.getItem('roomName') || '';
+  const theme = getRoomTheme(roomIdentifier);
 
   const selectedOptionRef = useRef(selectedOption);
   const currentIndexRef = useRef(currentIndex);
@@ -39,7 +43,7 @@ export default function Quiz() {
       .then((data) => {
         if (data && data.questions) {
           if (data.questions.length === 0) {
-            alert('No questions configured in this room yet. Please contact the administrator.');
+            alert('No questions configured in this assessment yet. Please notify the invigilator.');
             navigate('/');
             return;
           }
@@ -115,28 +119,30 @@ export default function Quiz() {
     }
   }, [handleFinalSubmit, timePerQuestion]);
 
-  // Countdown timer per individual question
+  // Countdown timer decrement interval
   useEffect(() => {
     if (loading || questions.length === 0) return;
 
     const timer = setInterval(() => {
-      setTimeLeft((prev) => {
-        if (prev <= 1) {
-          // Timer reached 0 -> Auto advance
-          handleNext();
-          return timePerQuestion;
-        }
-        return prev - 1;
-      });
+      setTimeLeft((prev) => Math.max(0, prev - 1));
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [currentIndex, loading, questions.length, handleNext, timePerQuestion]);
+  }, [currentIndex, loading, questions.length]);
+
+  // Handle auto-advance when timer reaches 0
+  useEffect(() => {
+    if (loading || questions.length === 0) return;
+
+    if (timeLeft === 0) {
+      handleNext();
+    }
+  }, [timeLeft, loading, questions.length, handleNext]);
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center font-bold tracking-widest text-sm uppercase">
-        Initializing Secure Exam Environment...
+      <div className={`min-h-screen ${theme.bg} ${theme.textLight} flex items-center justify-center font-bold tracking-widest text-sm uppercase`}>
+        Initializing Secure Assessment Environment...
       </div>
     );
   }
@@ -146,30 +152,30 @@ export default function Quiz() {
 
   if (!currentQ) {
     return (
-      <div className="min-h-screen flex items-center justify-center font-bold">
+      <div className={`min-h-screen ${theme.bg} ${theme.textLight} flex items-center justify-center font-bold`}>
         No active questions found.
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-white quiz-lock flex flex-col justify-between p-8 select-none">
+    <div className={`min-h-screen ${theme.bg} ${theme.textLight} quiz-lock flex flex-col justify-between p-8 select-none`}>
       {/* Top Header: Progress and Timer */}
-      <div className="flex justify-between items-center border-b border-black pb-4">
+      <div className={`flex justify-between items-center ${theme.headerBg} p-4 rounded-xl shadow-lg border-b-2 ${theme.border}`}>
         <div>
-          <span className="text-lg font-bold">
+          <span className={`text-lg font-extrabold ${theme.text}`}>
             Question {currentIndex + 1} of {questions.length}
           </span>
-          <span className="ml-4 text-xs font-semibold uppercase px-2 py-0.5 bg-gray-100 border border-black">
+          <span className={`ml-4 text-xs font-bold uppercase px-3 py-1 rounded-full ${theme.badge}`}>
             {currentQ.marks || 1} {currentQ.marks === 1 ? 'Mark' : 'Marks'}
           </span>
         </div>
 
-        <div className="flex items-center space-x-2">
-          <span className="text-xs uppercase text-gray-500 font-bold">Timer:</span>
+        <div className="flex items-center space-x-3">
+          <span className="text-xs uppercase text-slate-400 font-bold tracking-wider">Timer:</span>
           <span
-            className={`text-3xl font-mono font-bold ${
-              timeLeft <= 5 ? 'text-red-600 animate-pulse' : 'text-black'
+            className={`text-3xl font-mono font-extrabold ${
+              timeLeft <= 5 ? 'text-red-500 animate-pulse' : theme.text
             }`}
           >
             00:{timeLeft < 10 ? `0${timeLeft}` : timeLeft}
@@ -178,56 +184,55 @@ export default function Quiz() {
       </div>
 
       {/* Main Question Interface */}
-      <div className="max-w-3xl w-full mx-auto my-auto py-8">
-        <h2 className="text-2xl font-bold leading-relaxed mb-8">
+      <div className={`max-w-3xl w-full mx-auto my-auto py-8 ${theme.cardBg} border-2 ${theme.border} p-8 rounded-2xl shadow-2xl space-y-8`}>
+        <h2 className="text-xl md:text-2xl font-bold leading-relaxed text-slate-100">
           {currentQ.question_text}
         </h2>
 
         <div className="space-y-4">
           {currentQ.options &&
-            currentQ.options.map((opt) => (
-              <button
-                key={opt.key}
-                type="button"
-                onClick={() => setSelectedOption(opt.key)}
-                className={`w-full text-left p-4 border-2 font-medium text-lg flex items-center space-x-4 transition-none ${
-                  selectedOption === opt.key
-                    ? 'border-black bg-black text-white'
-                    : 'border-black hover:bg-gray-100 text-black'
-                }`}
-              >
-                <span
-                  className={`font-bold border px-2 py-0.5 ${
-                    selectedOption === opt.key ? 'border-white' : 'border-black'
-                  }`}
+            currentQ.options.map((opt) => {
+              const isSelected = selectedOption === opt.key;
+              const optionClass = isSelected
+                ? theme.optionSelected || 'border-amber-500 bg-amber-500 text-slate-950 font-bold'
+                : theme.optionDefault || 'border-slate-700 bg-slate-900/60 text-slate-200 hover:border-amber-500/50';
+
+              return (
+                <button
+                  key={opt.key}
+                  type="button"
+                  onClick={() => setSelectedOption(opt.key)}
+                  className={`w-full text-left p-4 rounded-xl border-2 font-medium text-base md:text-lg flex items-center space-x-4 transition-all ${optionClass}`}
                 >
-                  {opt.key}
-                </span>
-                <span>{opt.text}</span>
-              </button>
-            ))}
+                  <span className={`font-bold border px-3 py-1 rounded-lg ${isSelected ? 'border-current' : 'border-slate-600'}`}>
+                    {opt.key}
+                  </span>
+                  <span>{opt.text}</span>
+                </button>
+              );
+            })}
         </div>
       </div>
 
-      {/* Footer Navigation: No Previous Button Allowed */}
-      <div className="flex justify-between items-center pt-4 border-t border-black">
-        <span className="text-xs text-gray-500 font-medium">
-          Strict Mode: Navigating backward is disabled. Leaving this window terminates the test.
+      {/* Footer Navigation */}
+      <div className="flex flex-col md:flex-row justify-between items-center gap-4 pt-4 border-t border-slate-700/60">
+        <span className="text-xs text-slate-400 font-medium">
+          Strict Anti-Cheat Mode: Navigating backward is disabled. Exiting this window terminates the test.
         </span>
 
         {isLast ? (
           <button
             type="button"
             onClick={handleFinalSubmit}
-            className="bg-black text-white font-bold px-8 py-3 uppercase hover:bg-gray-800 transition-colors"
+            className={`${theme.buttonBg} px-8 py-3 rounded-xl uppercase tracking-wider transition-all`}
           >
-            Submit Quiz
+            Submit Assessment
           </button>
         ) : (
           <button
             type="button"
             onClick={handleNext}
-            className="bg-black text-white font-bold px-8 py-3 uppercase hover:bg-gray-800 transition-colors"
+            className={`${theme.buttonBg} px-8 py-3 rounded-xl uppercase tracking-wider transition-all`}
           >
             Next Question
           </button>

@@ -6,6 +6,7 @@ const csv = require('csv-parser');
 const fs = require('fs');
 const dbService = require('../services/dbService');
 const auth = require('../middleware/auth');
+const { getJwtSecret } = require('../config/jwt');
 
 const router = express.Router();
 const upload = multer({ dest: 'uploads/' });
@@ -24,7 +25,7 @@ router.post('/login', async (req, res) => {
     const match = await bcrypt.compare(password, admin.password_hash);
     if (!match) return res.status(401).json({ error: 'Invalid username or password' });
 
-    const secret = process.env.JWT_SECRET || 'fallback_secret_key_change_me';
+    const secret = getJwtSecret();
     const token = jwt.sign(
       { username: admin.username },
       secret,

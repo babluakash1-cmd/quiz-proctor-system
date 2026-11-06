@@ -1,4 +1,4 @@
-const express = require('express');
+﻿const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
 const cors = require('cors');
@@ -17,11 +17,11 @@ const server = http.createServer(app);
 
 // Determine allowed origins for CORS & WebSockets
 const rawClientUrl = process.env.CLIENT_URL || '*';
-const allowedOrigins = rawClientUrl.includes(',')
+const allowedOrigins = rawClientUrl === '*'
+  ? true
+  : rawClientUrl.includes(',')
   ? rawClientUrl.split(',').map((u) => u.trim())
-  : rawClientUrl === '*'
-  ? '*'
-  : [rawClientUrl];
+  : [rawClientUrl.trim()];
 
 const io = new Server(server, {
   cors: {
@@ -102,6 +102,7 @@ setInterval(async () => {
       await dbService.updateCandidate(c.id, {
         status: 'submitted',
         score: totalScore,
+        marks: totalScore,
         submitted_at: Date.now(),
         terminated_reason: 'Heartbeat timeout (force close / connection drop)'
       });
@@ -125,7 +126,8 @@ setInterval(async () => {
 }, 5000);
 
 const PORT = process.env.PORT || 5000;
-server.listen(PORT, () => {
+server.listen(PORT, '0.0.0.0', () => {
   console.log(`Quiz Proctor backend running on port ${PORT}`);
   console.log(`Allowed CORS origins: ${JSON.stringify(allowedOrigins)}`);
 });
+
